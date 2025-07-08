@@ -1,0 +1,1 @@
+void resolve_hostname(const char* hostname);
