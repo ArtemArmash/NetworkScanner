@@ -31,7 +31,7 @@ void resolve_hostname(const char *hostname)
     for(rp = result; rp != NULL; rp=rp->ai_next){
         std::cout << inet_ntoa(((sockaddr_in*)rp->ai_addr)->sin_addr) << std::endl;
     }
-    if(rp==NULL){
-        exit(EXIT_FAILURE);
-    }
+    
+    freeaddrinfo(result);
+    
 }
