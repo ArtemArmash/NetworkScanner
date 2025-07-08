@@ -1,10 +1,23 @@
 #include <iostream>
+
 #include "Utils/include/network_utils.h"
 using namespace std;
 
 
 int main(){
-    const char* hostname = "421412g31231oogle.com";
+    std::vector<std::string>hostnamesDNS=
+    {"google.com", "youtube.com", "chat.openai.com", "github.com"};
+    
+    for (auto& hostname : hostnamesDNS)
+    {
+        std::vector<std::string>hostnamesIP = resolve_hostname({hostname});
 
-    resolve_hostname(hostname);
+        cout << "IP address for: " << hostname<<endl;
+        for (auto& IP : hostnamesIP)
+        {
+            cout << IP << endl;
+        }
+        cout << endl;
+    }
+    
 }
