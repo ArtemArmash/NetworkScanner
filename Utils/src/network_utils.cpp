@@ -12,7 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
-
+#include <fcntl.h>
 std::vector<std::string> resolve_hostname(const std::vector<std::string> &hostnames)
 {
     std::vector<std::string> resolve_hostnames;
@@ -44,32 +44,35 @@ std::vector<std::string> resolve_hostname(const std::vector<std::string> &hostna
     return resolve_hostnames;
 }
 
-bool is_port_open(std::map<std::string, std::pair<int, std::string>> &IPandPort)
-{
-    for (auto &[ip, host_port] : IPandPort)
-    {
-        int port = host_port.first;
-        std::string &status = host_port.second;
-        int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (sock < 0)
-        {
-            perror("Socket failed created\n");
-            continue;
-        }
-        sockaddr_in addr;
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(port);
-
-        if (inet_pton(AF_INET, ip.c_str(), &addr.sin_addr) <= 0)
-        {
-            status = "Invalid IP address";
-            close(sock);
-            continue;
-        }
-        int result = connect(sock, (sockaddr *)&addr, sizeof(addr));
-        close(sock);
-
-        status = (result == 0) ? "Open" : "Closed";
+bool is_port_open(const std::string& ip, int port) {
+    
+    int sock=socket(AF_INET, SOCK_STREAM, 0);
+    if(sock <= 0){
+        std::cerr<<"Cant created socket";
+        return false;
     }
-    return true;
+    
+    timeval timeout;
+    timeout.tv_sec=1;
+    timeout.tv_usec=0;
+    if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) == -1){
+        close(sock);
+        return false;
+    }
+    if(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) == -1){
+        close(sock);
+        return false;
+    }
+
+    sockaddr_in addr;
+    addr.sin_family=AF_INET;
+    addr.sin_port=htons(port);
+    if(inet_pton(AF_INET, ip.c_str(), &addr.sin_addr) <= 0){
+        close(sock);
+        return false;
+    }
+    int result = connect(sock, (struct sockaddr*)&addr, sizeof(addr));
+    close(sock);
+
+    return result == 0;
 }
