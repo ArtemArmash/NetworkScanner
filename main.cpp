@@ -1,28 +1,40 @@
 #include <iostream>
 #include <map>
+#include <thread>
+#include <mutex>
 #include "Utils/include/network_utils.h"
-
 
 using namespace std;
 
+mutex lock_mutex;
 
+void check_port_worker(const std::string &ip, int port)
+{
+  lock_guard<mutex> guard(lock_mutex);
+  cout << ip << " | " << port << " | ";
+  if (is_port_open(ip, port))
+    cout << "Open";
+  else
+    cout << "Closed";
+  cout << endl;
+}
 
 int main()
 {
-  std::vector<std::string>hostnamesDNS=
-  {"google.com", "youtube.com", "chat.openai.com", "github.com"};
+  // std::vector<std::string>hostnamesDNS=
+  // {"google.com", "youtube.com", "chat.openai.com", "github.com"};
 
-  for (auto& hostname : hostnamesDNS)
-  {
-      std::vector<std::string>hostnamesIP = resolve_hostname({hostname});
+  // for (auto& hostname : hostnamesDNS)
+  // {
+  //     std::vector<std::string>hostnamesIP = resolve_hostname({hostname});
 
-      cout << "IP address for: " << hostname<<endl;
-      for (auto& IP : hostnamesIP)
-      {
-          cout << IP << endl;
-      }
-      cout << endl;
-  }
+  //     cout << "IP address for: " << hostname<<endl;
+  //     for (auto& IP : hostnamesIP)
+  //     {
+  //         cout << IP << endl;
+  //     }
+  //     cout << endl;
+  // }
 
   std::map<std::string, int> IPandPort = {
       {"8.8.8.8", 53},         // Google DNS
@@ -45,15 +57,24 @@ int main()
       {"64.233.187.99", 443},  // gmail.com HTTPS
       {"64.233.187.99", 80}    // gmail.com HTTP
   };
+  const int max_threads = 16;
+  vector<thread> threads;
 
-  for (const auto& [ip, port] : IPandPort)
+  for (const auto &[ip, port] : IPandPort)
   {
-    cout << ip << " | " << port << " | ";
-    if (is_port_open(ip, port))
-      cout << "Open";
-    else
-      cout << "Closed";
-    cout << endl;
+    threads.emplace_back(check_port_worker, ip, port);
+    if (threads.size() == max_threads)
+    {
+      for (thread &th : threads)
+      {
+        th.join();
+      }
+      threads.clear();
+    }
   }
 
+  for (thread &th : threads)
+  {
+    th.join();
+  }
 }

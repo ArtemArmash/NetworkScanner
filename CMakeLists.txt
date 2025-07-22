@@ -10,3 +10,6 @@ Utils/src/network_utils.cpp
 )
 
 add_executable(scanner ${SOURCES})
+
+find_package(Threads REQUIRED)
+target_link_libraries(scanner PRIVATE Threads::Threads)
